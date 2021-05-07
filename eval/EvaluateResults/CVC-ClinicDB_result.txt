@@ -1,0 +1,2 @@
+(Dataset:CVC-ClinicDB; Model:cpd_1204) meanDic:0.916;meanIoU:0.867;wFm:0.914;Sm:0.941;meanEm:0.969;MAE:0.010;maxEm:0.975;maxDice:0.920;maxIoU:0.872;meanSen:0.923;maxSen:1.000;meanSpe:0.977;maxSpe:0.982.
+(Dataset:CVC-ClinicDB; Model:mseg) meanDic:0.922;meanIoU:0.873;wFm:0.921;Sm:0.943;meanEm:0.975;MAE:0.009;maxEm:0.978;maxDice:0.926;maxIoU:0.878;meanSen:0.935;maxSen:1.000;meanSpe:0.991;maxSpe:0.998.

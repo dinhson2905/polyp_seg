@@ -1,0 +1,107 @@
+EfficientNet
+- cân bằng một cách có hệ thống (depth (số layer), width (độ dày của layer), resolution) của mạng -> hiệu quả
+- Scaling (thu phóng mô hình):
+    + Depth Scaling: Resnet50 -> Resnet200
+    + Width Scaling: thu phóng theo chiều rộng của mạng (tăng kích thước batch_size, channel)
+    + Resolution Scaling: tăng, giảm độ phân giải
+- Công thức hóa:
+    + Yi = Fi(Xi); dims = [Ci, Hi, Wi]
+    + N = Fk (.) ... (.) F1(X1) = (.)___ Fj(X1)
+    + N = (.)___ Fi^Li(X<hi,wi,ci>), ^Li biểu thị Fi được lặp lại Li lần trong stage i.
+    --> d,w,r = max_Acc(N(d,w,r))
+- Compound Scaling:
+    + d = a^phi
+    + w = B^phi
+    + r = gama^phi
+    + a * B^2 * gama^2 = 2 
+    + a, B, gama >= 1
+    --> khi thu phóng FLOPs tăng ~= 2^phi
+- Kiến trúc:
+    + MBConv
+    + ACC(m) * [FLOPs(m)/T]^w 
+    + w: -0.07, T: mức FLOPs mục tiêu,  
+
+
+
+
+
+
+
+- early epoch: image size nhỏ -> weak regularization
+- tăng size ảnh dần dần -> stronger regularization
+
+2. Related work
+- Training và Parameter efficiency:
+    + DenseNet (2017), EfficientNet (2019) tập trung vào Parameter efficiency nhằm đạt được acc tốt hơn với ít params hơn.
+    + Những model gần đây tập trung cải tiến training hoặc inference speed. (GPU/TPU inference speed)
+    --> Giờ ta nhắm tới cả training và parameter efficiency.
+
+- Progressive Training (training liên tục):
+    + Có thể thay đổi động training setting of network, transfer learning, adversarial learning (2019).
+    + progressive resizing nhằm cải thiện tốc độ training. Vì áp dụng cùng regularization cho tất cả image size -> giảm acc
+    --> Điều chỉnh regularization trong lúc training một cách thích ứng
+
+- Neural Architecture Search (NAS):
+    + Bằng cách tự động hóa network design process, NAS dùng để tối ưu kiến trúc mạng cho image classification, segmentation, hyperparameter, ...
+    + Trước đây, tập trung cải thiện FLOPs efficiency hoặc inference efficiency.
+    --> Ta dùng NAS điểu tối ưu hóa training và parameter efficency.
+
+3. EfficientNetv2
+3.1 Review
+- Họ mô hình B1->B7
+- Trong khi các mô hình gần đây khẳng định lợi ích về training và inference thì chúng kém hơn EfficentNet về hiệu quả params và FLOPs.
+3.2 Hiểu về Training Efficency
+- Training với ảnh size rất lớn là chậm:
+    + kích thước ảnh lớn của EfficentNet làm cho việc sử dụng memory đáng kể.
+    + Vì tổng memory trên GPU/TPU là fixed -> train với batch_size nhỏ hơn -> training chậm
+    -> Cải tiến bằng FixRes (2019), sử dụng kích thước ảnh nhỏ hơn cho training và inference.
+    -> Ảnh nhỏ -> ít tính toán -> batch_size lớn -> training speed tăng
+    -> Ta dần dần điều chỉnh size ảnh và regularization
+- Depthwise convolutions là chậm với early layers:
+    + Tuy ít tham số nhưng depthwise conv lại không tận dụng được hết các tài nguyên để tính toán.
+    --> Fuse-MBConv (xem hình). Nhanh ở early epoch -> chậm chậm --> kết hợp với MBConv
+    --> Tuy nhiên, ta kết hợp MBConv với Fuse-MBConv --> không tầm thường (nontrivial)
+    --> Thúc đẩy việc tận dụng NAS để tìm ra sự kết hợp tốt nhất
+- Scaling đồng đều cho mỗi stage là sub-optimal (không tối ưu nhất):
+    + EfficientNet scale up tất cả stage như nhau bằng cách sử dụng compound scaling rule.
+    + Ex: khi hệ số depth = 2, tất cả stage đều double layers.
+    + Tuy nhiên, các stage này lại không đóp góp như nhau vào training speed và params efficiency
+    --> Sử dụng 'non-uniform scaling strategy' để dần thêm nhiều layer hơn cho các stage sau.
+    --> Sửa đổi scaling rule và hạn chế maximum image size ở giá trị nhỏ hơn để giảm tiêu thụ memory và training chậm.
+3.3 Training-Aware (Nhận thức training) NAS và Scaling
+- NAS search:
+    + Dựa trên NAS works
+    + Tối ưu acc, params efficiency, training efficiency.
+    + EfficentNet làm backbone
+    + Search-space là không gian lựa chọn các: {MBConv, Fuse-MBConv}, num_layers, kernel_size {3x3, 5x5}, expansion ratio {1, 4, 6}
+    + Xóa bỏ option không cần thiết: pooling skip vì chúng không bao giờ được sử dụng trong original EfficentNet.
+    + Tái sử dụng lại channel sizes từ backbone.
+    + Vì search-space nhỏ hơn -> random search trên các mạng lớn (B4)
+    + A · S^w · P^v  -- w=-0.07, v=-0.05 -- A: acc, S: normalized training step time (forward + backward), P: parameter size 
+- EfficientNetV2 Architecture:
+    + sử dụng kết hợp MBConv và Fuse-MBConv trong các early layer
+    + tỉ lệ expansion cho MBConv nhỏ hơn -> ít chi phí hơn
+    + kernel_size 3x3 và nhỏ hơn -> phải thêm nhiều layers để bù lại receptive field bị giảm.
+    + Loại last stride-1 stage trong origin EfficientNet
+
+- EfficientNetV2 Scaling:
+    + EfficientNet-S -> M/L bằng compound scaling với thêm một số tối ưu hóa bổ sung:
+        _ giới hạn kích thước ảnh -> 480
+        _ Dần dần thêm nhiều layers vào các stage sau để tăng capacity mà không cần thêm chi phí runtime.
+
+4. Progressive Learning
+- Motivation:
+    + Khi training với image size khác nhau -> điều chỉnh regularization cho phù hợp 
+    + Các model lớn cần stronger regularization để tránh overfitting
+    --> Tương tự, image size cũng tương tự
+- Progressive Learning với apdative Regularization
+    "
+    input: init image size S0 và regularization {phi_0^k}
+    input: final image size Se và regularization {phi_e^k}
+    input: N: total training steps, M stages
+    for i = 0 -> M-1 do:
+        image size: Si <- S0 + (Se-S0) * i/(M-1)
+        regularization: Ri <- {phi_i^k = phi_0^k + (phi_e^k - phi_0^k) * i/(M-1)}
+        train model với N/M steps với Si và Ri
+    "
+    - k: dropout, randaugument, mixup 

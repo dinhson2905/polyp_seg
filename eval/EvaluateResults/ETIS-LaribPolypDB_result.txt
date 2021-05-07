@@ -1,0 +1,28 @@
+(Dataset:ETIS-LaribPolypDB; Model:cpd_1204) 
+meanDic:0.721;
+meanIoU:0.650;
+wFm:0.692;
+Sm:0.840;
+meanEm:0.866;
+MAE:0.015;
+maxEm:0.894;
+maxDice:0.734;
+maxIoU:0.659;
+meanSen:0.764;
+maxSen:1.000;
+meanSpe:0.883;
+maxSpe:0.909.
+(Dataset:ETIS-LaribPolypDB; Model:mseg) 
+meanDic:0.716;
+meanIoU:0.646;
+wFm:0.685;
+Sm:0.838;
+meanEm:0.864;
+MAE:0.016;
+maxEm:0.890;
+maxDice:0.724;
+maxIoU:0.651;
+meanSen:0.770;
+maxSen:1.000;
+meanSpe:0.878;
+maxSpe:0.918.

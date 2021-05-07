@@ -1,0 +1,26 @@
+(Dataset:Kvasir; Model:cpd_1204) meanDic:0.916;
+meanIoU:0.862;
+wFm:0.907;
+Sm:0.925;
+meanEm:0.958;
+MAE:0.022;
+maxEm:0.962;
+maxDice:0.920;
+maxIoU:0.867;
+meanSen:0.915;
+maxSen:1.000;
+meanSpe:0.985;
+maxSpe:0.994.
+(Dataset:Kvasir; Model:mseg) 
+meanDic:0.909;
+meanIoU:0.854;
+wFm:0.902;Sm:0.922;
+meanEm:0.955;
+MAE:0.024;
+maxEm:0.960;
+maxDice:0.915;
+maxIoU:0.860;
+meanSen:0.899;
+maxSen:1.000;
+meanSpe:0.987;
+maxSpe:0.997.

@@ -1,0 +1,10 @@
+(Dataset:CVC-ColonDB; Model:cpd_1204) 
+meanDic:0.734;meanIoU:0.663;
+wFm:0.724;Sm:0.831;meanEm:0.859;
+MAE:0.038;maxEm:0.883;
+maxDice:0.754;
+maxIoU:0.676;
+meanSen:0.740;
+maxSen:1.000;
+meanSpe:0.917;maxSpe:0.943.
+(Dataset:CVC-ColonDB; Model:mseg) meanDic:0.698;meanIoU:0.631;wFm:0.691;Sm:0.813;meanEm:0.833;MAE:0.040;maxEm:0.881;maxDice:0.735;maxIoU:0.657;meanSen:0.701;maxSen:1.000;meanSpe:0.886;maxSpe:0.915.
