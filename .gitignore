@@ -142,3 +142,4 @@ data/*
 checkpoints/*
 results/*
 libs/weights/*
+eval/EvaluateResults/
