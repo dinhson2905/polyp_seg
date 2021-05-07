@@ -1,2 +1,0 @@
-(Dataset:CVC-300; Model:cpd_1204) meanDic:0.892;meanIoU:0.823;wFm:0.870;Sm:0.933;meanEm:0.964;MAE:0.007;maxEm:0.971;maxDice:0.898;maxIoU:0.831;meanSen:0.943;maxSen:1.000;meanSpe:0.991;maxSpe:0.997.
-(Dataset:CVC-300; Model:mseg) meanDic:0.902;meanIoU:0.836;wFm:0.886;Sm:0.937;meanEm:0.974;MAE:0.006;maxEm:0.980;maxDice:0.908;maxIoU:0.842;meanSen:0.943;maxSen:1.000;meanSpe:0.992;maxSpe:0.998.
