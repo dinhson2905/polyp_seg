@@ -28,4 +28,4 @@ def mean2(input, target):
     input_flat = np.reshape(input, -1)
     target_flat = np.reshape(target, -1)
     n = input_flat.shape[0]
-    
+    pass

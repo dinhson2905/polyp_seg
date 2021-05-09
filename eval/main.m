@@ -14,7 +14,7 @@ clc;
 
 % ---- 1. ResultMap Path Setting ----
 ResultMapPath = '../results/';
-Models = {'cpd_1204', 'mseg'}; %{'UNet','UNet++','PraNet','SFA'};
+Models = {'HarDMSEG'};
 modelNum = length(Models);
 
 % ---- 2. Ground-truth Datasets Setting ----
@@ -147,7 +147,7 @@ for d = 1:datasetNum
         meanIoU = mean(column_IoU);
         maxIoU = max(column_IoU);
         
-        save([ResPath model],'Sm', 'mae', 'column_Dic', 'column_Sen', 'column_Spe', 'column_E','column_IoU','maxDic','maxEm','maxSen','maxSpe','maxIoU','meanIoU','meanDic','meanEm','meanSen','meanSpe');
+        save([ResPath model],'Sm', 'mae', 'column_Dic', 'column_Sen', 'column_Spe', 'column_E','column_IoU','maxDic','maxEm','maxSen','maxSpe','maxIoU','meanIoU','meanDic','meanEm','meanSen','meanSpe','wFm');
         fprintf(fileID, '(Dataset:%s; Model:%s) meanDic:%.3f;meanIoU:%.3f;wFm:%.3f;Sm:%.3f;meanEm:%.3f;MAE:%.3f;maxEm:%.3f;maxDice:%.3f;maxIoU:%.3f;meanSen:%.3f;maxSen:%.3f;meanSpe:%.3f;maxSpe:%.3f.\n',dataset,model,meanDic,meanIoU,wFm,Sm,meanEm,mae,maxEm,maxDic,maxIoU,meanSen,maxSen,meanSpe,maxSpe);
         fprintf('(Dataset:%s; Model:%s) meanDic:%.3f;meanIoU:%.3f;wFm:%.3f;Sm:%.3f;meanEm:%.3f;MAE:%.3f;maxEm:%.3f;maxDice:%.3f;maxIoU:%.3f;meanSen:%.3f;maxSen:%.3f;meanSpe:%.3f;maxSpe:%.3f.\n',dataset,model,meanDic,meanIoU,wFm,Sm,meanEm,mae,maxEm,maxDic,maxIoU,meanSen,maxSen,meanSpe,maxSpe);
     end
