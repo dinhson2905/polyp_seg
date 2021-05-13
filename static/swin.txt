@@ -1,0 +1,47 @@
+1.Ab
+- Đề xuất 1 transformer phân cấp mà sự thể hiện của nó được tính toán với shifted windows. 
+- Mang lại hiệu quả hơn bằng cách hạn chế tính toán self-attention đối với non-overlapping local window trong khi cho phép cross-window connection.
+- kiến trúc phân cấp có tính linh hoạt để mô hình hóa ở nhiều scale khác nhau và có độ tính toán tuyến tính với kích thước ảnh
+1. intro
+thách thức:
+- scale: 
+    + token được cố định scale, image thì không, độ phân giải
+    + tính toán self-attention là bậc 2
+-> Swin xây dựng feature map phân cấp và độ phức tạp tuyến tính
+- Swin xây dựng hierarchical representation bằng cách bắt đầu từ mảng kích thước nhỏ -> dần dần hợp nhất các mảng lân cận trong các trans layer sâu hơn
+- Với hierarchical feature map này, model có thể tận dụng các kỹ thuật tiên tiến để dự đoán mật độ một cách thích hợp như là UNET
+- độ phức tạp tính toán đạt được bằng cách tính toán self-attention locally trong non-overlapping windows phân vùng một hình ảnh
+- Một thiết kế quan trọng đó là sự thay đổi phân vùng windows giữa các lớp self-attention liên tiếp.
+- các shifted windows làm cầu nối các window của layer trước, cung cấp kết nối giữa chúng, tăng khả năng mô hình hóa.
+- Chiến lược này cũng hiệu quả với độ trễ. 
+- tất cả patch truy vấn trong một window đều có chung khóa set1, điều này tạo điều kiện cho việc truy cập bộ nhớ trong phần cứng. 
+- Ngược lại, các phương pháp tiếp cận tự chú ý dựa trên cửa sổ trượt trước đó bị độ trễ thấp trên phần cứng chung do các bộ khóa khác nhau cho các pixel truy vấn khác nhau2. 
+- Các thử nghiệm của chúng tôi cho thấy rằng phương pháp tiếp cận cửa sổ dịch chuyển được đề xuất có độ trễ thấp hơn nhiều so với phương pháp cửa sổ trượt, nhưng cũng tương tự về sức mạnh mô hình hóa (xem Bảng 5 và 6).
+2. Related work
+- CNN: 
+- kiến trúc backbone dựa trên self-attention: một số đã thay thế conv layer thành self-attention layer. -> access memory tốn kém -> latecy cao
+-> đề xuất shifted window để triển khai tốt trong phần cứng
+- self-attention/Transformer trong CNN: 
+self-attention layer có thể bổ sung cho CNN các backbone hoặc head network bằng cách cung cấp khả năng mã hóa các phụ thuộc xa hoặc các tương tác không đồng nhất
+
+- backbone dựa trên transformer:
+    + ViT áp dụng trực tiếp transformer trên non-overlapping medium-sized image patchs để phân loại hình ảnh
+    + ViT không hiệu quả để làm backbone vì feature map có độ phân giải thấp và gia tăng bậc 2 trong độ phức tạp với image size.
+    -> Swin
+3. Method
+3.1. Overall Architecture
+- input: RGB image (HxWx3)
+- patch spliting module: -> non-overlapping patches. mỗi patch coi là một 'token' có kích thước (4x4x3) (H/4 x H/4 x 3)
+- linear embedding: patches (raw valued feature) -> C (H/4 x W/4 x 3) -> (H/4 x W4 x C)
+- Swin transformer blocks: H/4 x W/4 x C
+    + thay thế multi-head self-attention = module dựa trên các shifted windows với các layer khác được giữ nguyên (MLP + GELU + LN...).
+- patch merging layers: giảm bớt số token
+
+3.2. Shifted Window based self-attention
+- Self-attention in non-overlapped windows:
+    + tính toán self-attention trong local windows.
+    + các windows được bố trí để phân vùng hình ảnh không overlap nhau 
+    -> module MSA
+3.3. Shifted window partitioning in successive blocks
+    + MSA thiếu sự kết nối giữa các windows -> hạn chế sức mạnh mô hình hóa
+    -> shifted window partitioning nằm giữa 2 khối Swin liên tiếp

@@ -235,14 +235,55 @@ def get_n_params(model):
 # TN = num_no_rec - FN
 
 # print(FN, FP, TN)
-from scipy import ndimage
-a = np.array(([0, 0, 0, 0, 0],
-              [0, 1, 0, 0, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 0, 1, 0],
-              [0, 0, 0, 0, 0]))
+# import scipy.ndimage
+# gt =  np.array(([1, 1, 1, 0, 0],
+#                 [0, 1, 0, 0, 0],
+#                 [0, 0, 0, 0, 0],
+#                 [0, 0, 0, 1, 0],
+#                 [0, 0, 1, 0, 0]))
 
-print(a)
-edt, inds = ndimage.distance_transform_edt(np.logical_not(a), return_indices=True)
-print(edt)
-print(inds)
+# gt_ =  np.array(([0, 0, 0, 1, 1],
+#                 [1, 0, 1, 1, 1],
+#                 [1, 1, 1, 1, 1],
+#                 [1, 1, 1, 0, 1],
+#                 [1, 1, 1, 1, 1]))
+
+# res = np.array(([0, 1, 1, 0, 0],
+#                 [0, 1, 0, 0, 0],
+#                 [0, 0, 1, 0, 0],
+#                 [0, 1, 0, 1, 0],
+#                 [0, 0, 0, 0, 0]))
+
+# a, IDXT = scipy.ndimage.distance_transform_edt(gt_, return_indices=True)
+# # print(IDXT)
+# E = np.abs(res - gt)
+# Et = E
+# # print(gt)
+# # print(res)
+# print(Et)
+# print(np.logical_not(gt))
+# x = Et[np.logical_not(gt)]
+# print(x)
+# print(len(x))
+# Et[~gt] = Et(IDXT(~gt))
+
+# a = torch([[1, 2], [2, 3]])
+
+# x = nn.BatchNorm2d(a)
+# print(x)
+
+from libs.swin.build import build_model
+
+config = configparser.ConfigParser()
+config.read('./libs/swin/config_swin.ini')
+
+# print(config['MODEL']['DROP_PATH_RATE'])
+# print(config.sections())
+model = build_model(config)
+
+# from libs.swin.swincpd import SwinCPD
+
+# model = SwinCPD()
+# tensor = torch.randn([1, 3, 352, 352])
+# res = model(tensor)
+# print(res.shape)

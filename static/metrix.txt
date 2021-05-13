@@ -1,0 +1,117 @@
+----- Metrics -----
+1. Fmeasure
+- Dice
+- IoU
+- recall
+- pre
+- sen
+- specif
+- FB; B là tham số thể hiện trade-off giữa recall và precision
+2. wFb
+3. Sm
+4. maxEm
+5. MAE = mean() ok
+--------------
+Enhanced-Alignment Metrics
+- kết hợp giá trị local pixel với giá trị image-level mean 
+- các measure kia favor noise map hơn là estimated map. (nghĩa là với metrix(noisemap, gt) >  metrix(FM, gt))
+- các measure này giải quyết sự tương đồng về pixel-wise, nhưng không có sự tương đồng về cấu trúc
+=> S-measure, nhưng lại được thiết kế để eval non-binary maps
+=> S-measure tập trung so sánh độ chói, độ tương phản, xác xuất phân tán.
+=> Enhanced-Alignment: captures số liệu thống kê image-level và thông tin đối sánh local pixel.
+- bias matrix: khoảng cách giữa mỗi pixel và global mean của nó. có thể loại bỏ error do các biến thể nội tại hoặc sự khác biệt lớn về số
+- bias matrix(FM) = FM - mean(FM)
+- bias matrix (GT) = GT - mean(GT)
+- xem xét độ tương quan giữa FM và GT (Hadamard product) => align_matrix
+- giá trị align_matrix phụ thuộc vào global mean => có global statistic
+- abs(align_matrix) phụ thuộc vào độ tương đồng giữa uFM và uGT. 
+- khi FM và GT tương đồng cao, uFM và uGT có thể làm tăng các giá trị dương tại aligned position (2 đầu vào cùng dấu),
+  và giảm các giá trị âm tại unaligned position.
+=> Cần một hàm ánh xạ ngăn chặn sự giảm ở các giá trị âm và tăng cường ở vùng giá trị dương.
+=> enhanced = ((align_Matrix + 1).^2)/4;
+
+=> score = sum(enhanced_matrix(:))./(w*h - 1 + eps)
+---------------------
+Structure-measure
+- Region perspectives: 
+    mặc dù khó để mô tả object structure của 1 foreground map, 
+    cấu trúc của một object có thể được mô tả bằng cách kết hợp các cấu trúc của bộ phận (region) cấu thành
+- Object perspectives: 
+    trong high-quality foreground map, vùng foreground tương phản rõ rệt với vùng background và những vùng này có sự phân bố gần như đồng đều
+- Sm gồm 2 phần: 
+    + region aware structural similarity measure: nắm bắt global structural information bằng cách kết hợp thông tin cấu trúc của tất cả object-parts
+    + an object-aware structural similarity measure: so sánh sự phân bố global của vùng foreground và background trong SM và GT map.
+(chỉ số khác ssim)
+- ssim = (2mean(x)mean(y)/(mean(x)^2 + mean(y)^2))*(2sigma(x)sigma(y)/(sigma(x)^2 + sigma(y)^2))*(sigma(xy)/(sigma(x)sigma(y)))
+- ssim so dánh độ chói, độ tương phản, cấu trúc của SM và GT
+- x y hay sigma(x) sigma(y) càng gần nhau thì độ chói, độ tương phản càng gần với 1.
+- vì cấu trúc là độc lập nên việc thiết kế công thức so sánh cấu trúc nên độc lập độ chói và tương phản
+1. Region-aware structural similarity measure
+- được thiết kế để đánh giá độ tương đồng về cấu trúc object-parts so với GT.
+- đầu tiên, chia SM và GT thành 4 blocks bằng cách chia theo trục x y ở tâm GT.
+- sau đó, các sub images được chia một cách đệ quy như paper.
+- Tổng số khối được ký hiệu là K.
+- tính ssim(k)
+- gán trọng số cho mỗi ssim(k) tỷ lệ với GT foreground mà vùng này bao phủ
+- Sr = sum(wk ∗ ssim(k))
+2. Object-aware structural similarity measure
+- chia map thành nhiều block giúp đánhg giá sự tương đồng về object-parts.
+- Tuy nhiên Sr không thể giải thích rõ về sự tương đồng toàn cầu
+- việc đánh giá mức độ tương đồng ở cấp độ đối tượng là quan trọng
+- GT thường có các đặc điểm quan trọng, bao gồm độ tương phản rõ nét giữa FG và BG, và phân bố đều.-> SM cũng phải có đặc điểm này.
+2.1 Sharp foreground-background contrast
+- OFG = 2*x¯FG*y¯FG/(x¯FG^2 + y¯FG^2) (5) (luminance của ssim)
+- x¯FG = y¯FG -> OFG = 1
+- 2 map càng gần nhau thì OFG càng gần 1
+2.2 Uniform distribution 
+- vùng FG và BG thường có sự phân bố đều.
+- vì vậy, điều quan trọng là phải gán cho SM (gán giá trị như nhau trên toàn bộ đối tượng)
+- nếu sự biến thiên của FG trong SM cao -> phân phối sẽ không đều
+- sử dụng hệ số biến thiên để đại diện cho sự phân tán của SM
+- sử dụng hệ số biến thiên để tính toán sự phân bố không giống nhau giữa SM và gt
+- Dựa trên (5) ta có
+- DFG = ((x¯FG)^2 + (y¯FG)^2) / 2x¯FG * y¯FG + λ * σxFG / x¯FG (độ không giống nhau giữa SM và GT)
+->  OFG = 1 / DFG (độ giống nhau giữa SM và GT) 
+- OFG = 2x¯FG / ((x¯FG)^2 + 1 + 2λ * σxFG)
+- OBG = 2x¯BG / ((x¯BG)^2 + 1 + 2λ * σxBG)
+- So = µ ∗ OFG + (1 − µ) ∗ OBG
+2.3. S-measure 
+- S = α ∗ So + (1 − α) ∗ Sr,
+Tóm tắt:
++ đo độ tương đồng giữa region-aware và object-aware
++ region-aware: chia ảnh thành nhiều block -> sum(wk*ssim(k)) -> Sr
++ object-aware: đo độ giống nhau giữa SM và GT
+    + độ tương phản giữa FG và BG
+    + phân phối đều của saliency 
+    --> OFG và OBG -> So
+--> S = α ∗ So + (1 − α) ∗ Sr,
+-----------------
+3. wfb
+Hạn chế 
+- Nội suy:
+- Phụ thuộc (dependency) các measure không có sự phụ thuộc pixel 
+- tầm quan trọng ngang nhau
+
+--> wfb
+3.1. giải quyết vấn đề nội suy
+- vấn đề là do thersholding không phải là 1 0
+- mở rộng 4 đại lượng TP TN FP FN
+- G1xN biểu diễn column stack của binary gt. N là số pixel của image
+- D1xN biểu thị bản đồ không nhị phân để đánh giá G
+- Để mở rộng các giá trị này, cho phép pixel đúng 1 phần.
+-> thay vì tính tổng pixel đúng sai -> tính tổng đúng hoặc sai một phần 
+- TP' = DG; TN' = (1-D)(1-G); FP' = D(1-G); FN = (1-D)G
+3.2. giải quyết sự phụ thuộc và tầm quan trọng ngang nhau
+- gán trọng số khác nhau cho các error khác nhau
+- E = |G-D|
+-> TP' = (1-E)G; TN' = (1-E)(1-G); FP' = E(1-G); FN' = EG
+- Hàm trọng số gồm 2 thành phần:
+    + Anxn ghi lại sự phụ thuộc giữa các pixels
+    + Bnx1 biểu diễn tầm quan trọng khác nhau của các pixels
+- Ew = min(E, EA)*B
+- TPw = (1-Ew)G; TNw = (1-Ew)(1-G); FPw = Ew(1-G); FN = EwG
+- A sẽ capture sự phụ thuộc giữa các pixels foreground
+- A[ij] = f(ij) G(i) = G(j) = 1
+- A[ij] = 1 nếu G(i) = 0; i=j
+- A[ij] = 0 ngược lại
+- B[i] = {1 nếu G(i) = 1; 2 - e^a.delta(i) nếu ngược lại}
