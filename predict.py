@@ -5,6 +5,7 @@ import numpy as np
 import imageio
 from libs.hardmseg import HarDCPD, HarDMSEG
 from libs.pranet import PraNet
+from libs.respd import ResNetPD, ResNetCPD
 from utils.data_loader import ValidationDataset
 import configparser
 
@@ -26,6 +27,15 @@ elif model_name == 'hardcpd':
     model = HarDCPD()
     pth_path = config['Paths']['hardcpd_pth_path']
     result_path = config['Paths']['hardcpd_result_path']
+elif model_name == 'resnetpd':
+    model = ResNetPD()
+    pth_path = config['Paths']['resnetpd_pth_path']
+    result_path = config['Paths']['resnetpd_pth_path']    
+elif model_name == 'resnetcpd':
+    model = ResNetCPD()
+    pth_path = config['Paths']['resnetcpd_pth_path']
+    result_path = config['Paths']['resnetcpd_pth_path']
+
 
 model.load_state_dict(torch.load(pth_path))
 model.cuda()
@@ -47,9 +57,9 @@ for _data_name in ['CVC-300', 'CVC-ClinicDB', 'Kvasir', 'CVC-ColonDB', 'ETIS-Lar
         image = image.cuda()
         if model_name == 'pranet':
             _, _, _, res = model(image)
-        elif model_name == 'hardmseg':
+        elif model_name == 'hardmseg' or model_name == 'resnetpd':
             res = model(image)
-        elif model_name == 'hardcpd':
+        elif model_name == 'hardcpd' or model_name == 'resnetcpd':
             _, res = model(image)
         
         res = F.upsample(res, size=gt.shape, mode='bilinear', align_corners=False)

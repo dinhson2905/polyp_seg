@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .swin import SwinTransformer
+from .swin import swin
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1):
@@ -96,7 +96,7 @@ class SwinCPD(nn.Module):
         self.rfb4_1 = RFB(768, channel)
         
         self.agg1 = Aggregation(32)
-        self.swin = SwinTransformer()
+        self.swin = swin()
     
     def forward(self, x):
         # print(x.size())

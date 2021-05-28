@@ -126,6 +126,10 @@ class EffNetV2(nn.Module):
         self.conv = conv_1x1_bn(input_channel, output_channel)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = nn.Linear(output_channel, num_classes)
+        self.num_channels = [256, 512, 1024]
+        self.conv1 = conv_1x1_bn(64, 256)
+        self.conv2 = conv_1x1_bn(160, 512)
+        self.conv3 = conv_1x1_bn(272, 1024)
         self._initialize_weights()
 
     def forward(self, x):
@@ -133,10 +137,15 @@ class EffNetV2(nn.Module):
         out_branch = []
         for i in range(len(self.layers) - 1):
             x_medical = self.layers[i](x_medical)
-            if i == 10 or i == 25:
-                out_branch.append(x_medical)
-        
-        out_branch.append(x_medical)
+            if i == 10: # i = 10 is FuseBlock; i = 16 MBBlock
+                # con1x1 (conv -> batchnorm -> SiLu)
+                x_ = self.conv1(x_medical)
+                out_branch.append(x_)
+            elif i == 25:
+                x_ = self.conv2(x_medical)
+                out_branch.append(x_)
+
+        out_branch.append(self.conv3(x_medical))
         # print(out_branch[0].shape, out_branch[1].shape, out_branch[2].shape)
         # print(x.shape)
         x = self.features(x)

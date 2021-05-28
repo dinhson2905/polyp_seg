@@ -69,6 +69,7 @@ class Aggregation(nn.Module):
         self.conv5 = nn.Conv2d(3*channel, 1, 1)
 
     def forward(self, x1, x2, x3):
+        print(x1.shape, x2.shape, x3.shape)
         x1_1 = x1
         x2_1 = self.conv_upsample1(self.upsample(x1)) * x2
         x3_1 = self.conv_upsample2(self.upsample(self.upsample(x1))) * self.conv_upsample3(self.upsample(x2)) * x3
@@ -88,9 +89,9 @@ class EffNetV2SCPD(nn.Module):
     def __init__(self, channel=32):
         super(EffNetV2SCPD, self).__init__()
         self.relu = nn.ReLU(inplace=True)
-        self.rfb2_1 = RFB(64, channel)
-        self.rfb3_1 = RFB(160, channel)
-        self.rfb4_1 = RFB(272, channel)
+        self.rfb2_1 = RFB(256, channel)
+        self.rfb3_1 = RFB(512, channel)
+        self.rfb4_1 = RFB(1024, channel)
 
         self.agg1 = Aggregation(channel)
         self.upsample = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
@@ -98,9 +99,9 @@ class EffNetV2SCPD(nn.Module):
     
     def forward(self, x):
         effnetv2_s_out = self.effnetv2_s(x)
-        x2 = effnetv2_s_out[0] # (64, 44, 44)
-        x3 = effnetv2_s_out[1] # (160, 22, 22)
-        x4 = effnetv2_s_out[2] # (272, 11, 11)
+        x2 = effnetv2_s_out[0] # (64, 44, 44) (256, 44, 44) 
+        x3 = effnetv2_s_out[1] # (160, 22, 22) (512, 22, 22)
+        x4 = effnetv2_s_out[2] # (272, 11, 11) (1024, 11, 11)
 
         x2_rfb = self.rfb2_1(x2)
         x3_rfb = self.rfb3_1(x3)

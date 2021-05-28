@@ -14,7 +14,7 @@ clc;
 
 % ---- 1. ResultMap Path Setting ----
 ResultMapPath = '../results/';
-Models = {'PraHarDNet'};
+Models = {'ResNetPD'};
 modelNum = length(Models);
 
 % ---- 2. Ground-truth Datasets Setting ----

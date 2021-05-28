@@ -140,150 +140,36 @@ def get_n_params(model):
             nn = nn*s
         pp += nn
     return pp
-# input_tensor = torch.randn(1, 3, 352, 352).cuda()
-# # model = EffNetV2SCPD().cuda()
-# # model = HarDMSEG().cuda()
-# # model = hardnet().cuda()
-# # model = HarDCPD().cuda()
-# model = CRANet().cuda()
-# _, _, _, out = model(input_tensor)
-# print(out.shape)
-# num_params = get_n_params(model)
-# print(num_params)
-
-# from libs.pranet.pranet_res2net import PraNet
-# input_tensor = torch.randn(1, 3, 352, 352).cuda()
-# model = PraNet().cuda()
-# _, _, _, out = model(input_tensor)
-# print(out.shape)
-# num_params = get_n_params(model)
-# print(num_params)
-
-# ------------
-# from libs.pranet.pranet_hardnet import PraHarDNet
-# input_tensor = torch.randn(1, 3, 352, 352).cuda()
-# model = PraHarDNet().cuda()
-# _, _, _, out = model(input_tensor)
-# print(out.shape)
-# num_params = get_n_params(model)
-# print(num_params)
-
-# thresholds = np.linspace(1, 0, 256)
-# print(thresholds.shape)
-# print(len(thresholds))
-# for i in range(0, 10):
-#     print(thresholds[i])
-
-# def dice_coeff(resmap, gt, gtsize,  threshold):
-#     if threshold > 1:
-#         threshold = 1
-
-#     label3 = np.zeros(gtsize)
-#     print(label3)
-#     label3[resmap >= threshold] = 1
-#     print(label3)
-#     num_rec = len(np.nonzero(label3 == 1))
-#     print('num_rec: ', num_rec)
-#     num_no_rec = len(np.nonzero(label3 == 0))
-#     print('num_no_rec: ', num_no_rec)
-#     label_and = np.logical_and(label3, gt)
-#     print('label_and: ', label_and)
-#     num_and = len(np.nonzero(label_and == 1))
-#     print('num_and: ', num_and)
-#     num_obj = gt.sum()
-#     print('num_obj', num_obj)
-#     num_pred = label3.sum()
-#     print('num_pred', num_pred)
-#     FN = num_obj - num_and
-#     FP = num_rec - num_and
-#     TN = num_no_rec - FN
-
-#     if num_and == 0:
-#         dice = 0
-#         iou = 0
-#         pre = 0
-#         recall = 0
-#     else:
-#         iou = num_and/(FN + num_rec)
-#         pre = num_and/num_rec
-#         recall = num_and / num_obj
-#         dice = 2 * num_and / (num_obj + num_pred)
-#     return dice
-
-
-# A = np.array(([0.7, 0.8, 0], [0, 0.2, 0.7], [0.4, 0.1, 0.9]))
-# B = np.array(([1, 1, 0], [0, 0, 1], [1, 0, 1]))
-
-# x = np.abs(A - B)
-# print(x)
-# label = np.zeros(B.shape)
-# print(A, '\n', B, '\n', label)
-# label[A >= 0.5] = 1
-# print(label)
-# num_rec = len(label[np.nonzero(label == 1)])
-# num_no_rec = len(label[np.nonzero(label == 0)])
-# print('num_rec: ', num_rec)
-# print('num_no_rec: ', num_no_rec)
-# label_and = np.logical_and(label, B)
-# print(label_and)
-# num_and = len(label[np.nonzero(label == 1)])
-# print('num_and: ', num_and)
-# num_obj = B.sum()
-# num_pred = label.sum()
-# FN = num_obj - num_and
-# FP = num_rec - num_and
-# TN = num_no_rec - FN
-
-# print(FN, FP, TN)
-# import scipy.ndimage
-# gt =  np.array(([1, 1, 1, 0, 0],
-#                 [0, 1, 0, 0, 0],
-#                 [0, 0, 0, 0, 0],
-#                 [0, 0, 0, 1, 0],
-#                 [0, 0, 1, 0, 0]))
-
-# gt_ =  np.array(([0, 0, 0, 1, 1],
-#                 [1, 0, 1, 1, 1],
-#                 [1, 1, 1, 1, 1],
-#                 [1, 1, 1, 0, 1],
-#                 [1, 1, 1, 1, 1]))
-
-# res = np.array(([0, 1, 1, 0, 0],
-#                 [0, 1, 0, 0, 0],
-#                 [0, 0, 1, 0, 0],
-#                 [0, 1, 0, 1, 0],
-#                 [0, 0, 0, 0, 0]))
-
-# a, IDXT = scipy.ndimage.distance_transform_edt(gt_, return_indices=True)
-# # print(IDXT)
-# E = np.abs(res - gt)
-# Et = E
-# # print(gt)
-# # print(res)
-# print(Et)
-# print(np.logical_not(gt))
-# x = Et[np.logical_not(gt)]
-# print(x)
-# print(len(x))
-# Et[~gt] = Et(IDXT(~gt))
-
-# a = torch([[1, 2], [2, 3]])
-
-# x = nn.BatchNorm2d(a)
-# print(x)
-
-from libs.swin.build import build_model
-
-config = configparser.ConfigParser()
-config.read('./libs/swin/config_swin.ini')
-
-# print(config['MODEL']['DROP_PATH_RATE'])
-# print(config.sections())
-model = build_model(config)
 
 # from libs.swin.swincpd import SwinCPD
 
-# model = SwinCPD()
-# tensor = torch.randn([1, 3, 352, 352])
+# model = SwinCPD().cuda()
+# print(get_n_params(model))
+# tensor = torch.randn([8, 3, 352, 352]).cuda()
 # res = model(tensor)
 # print(res.shape)
+
+# model = EffNetV2SCPD().cuda()
+# tensor = torch.randn([1, 3, 352, 352]).cuda()
+# res = model(tensor)
+# print(res.shape)
+from libs.respd import ResNetCPD
+
+# model = ResNetCPD().cuda()
+# print(get_n_params(model))
+# tensor = torch.randn([4, 3, 352, 352]).cuda()
+# res1, res2 = model(tensor)
+# print(res2.shape, res1.shape)
+
+# from libs.respd import ResNetPD
+
+# model = ResNetPD().cuda()
+# print(get_n_params(model))
+# tensor = torch.randn([8, 3, 352, 352]).cuda()
+# res2 = model(tensor)
+# print(res2.shape)
+
+m = nn.AdaptiveAvgPool2d((1,1))
+tensor = torch.randn([1, 1024, 11, 11])
+out = m(tensor)
+print(out.shape)

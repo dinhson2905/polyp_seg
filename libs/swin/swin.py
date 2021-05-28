@@ -392,7 +392,7 @@ class PatchEmbed(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer. Default: None
     """
 
-    def __init__(self, img_size=224, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
+    def __init__(self, img_size=352, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
         super().__init__()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
@@ -559,8 +559,8 @@ class SwinTransformer(nn.Module):
             x, feature = layer(x)
             if i in [1, 2, 3]:
                 extract_feature = feature
-                norm_ = nn.LayerNorm(normalized_shape=extract_feature.shape[2])
-                extract_feature = norm_(extract_feature)
+                # norm_ = nn.LayerNorm(normalized_shape=extract_feature.shape[2])
+                # extract_feature = norm_(extract_feature)
                 extract_feature = extract_feature.permute(0, 2, 1)
                 B = extract_feature.shape[0]
                 C = extract_feature.shape[1]
@@ -579,10 +579,12 @@ class SwinTransformer(nn.Module):
         flops += self.num_features * self.num_classes
         return flops
 
-# if __name__ == '__main__':
-#     input_tensor = torch.randn((1, 3, 352, 352))
-#     p = SwinTransformer()
-#     res = p(input_tensor)
-#     for res_ in res:
-#         print(res_.shape)
-    # print(p.flops)    
+def swin(pretrained=False, **kwargs):
+    """Contructors a EfficientNetV2 model
+    """
+    model = SwinTransformer(**kwargs)
+    if pretrained:
+        weights = torch.load('./libs/weights/swintransformer.pth')
+        model.load_state_dict(weights)
+        print("pretrained SwinTransformer loaded ready")
+    return model
