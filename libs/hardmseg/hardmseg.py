@@ -72,6 +72,7 @@ class Aggregation(nn.Module):
     def forward(self, x1, x2, x3):
         # x3 have resolution is highest
         x1_1 = x1
+
         x2_1 = self.conv_upsample1(self.upsample(x1)) * x2
         x3_1 = self.conv_upsample2(self.upsample(self.upsample(x1))) * self.conv_upsample3(self.upsample(x2)) * x3
 
@@ -96,31 +97,6 @@ class HarDCPD(nn.Module):
         self.rfb4_1 = RFB(1024, channel)
         
         self.agg1 = Aggregation(32)
-
-        # self.ra4_conv1 = BasicConv2d(1024, 256, kernel_size=1)
-        # self.ra4_conv2 = BasicConv2d(256, 256, kernel_size=5, padding=2)
-        # self.ra4_conv3 = BasicConv2d(256, 256, kernel_size=5, padding=2)
-        # self.ra4_conv4 = BasicConv2d(256, 256, kernel_size=5, padding=2)
-        # self.ra4_conv5 = BasicConv2d(256, 1, kernel_size=1)
-
-        # self.ra3_conv1 = BasicConv2d(640, 64, kernel_size=1)
-        # self.ra3_conv2 = BasicConv2d(64, 64, kernel_size=3, padding=1)
-        # self.ra3_conv3 = BasicConv2d(64, 64, kernel_size=3, padding=1)
-        # self.ra3_conv4 = BasicConv2d(64, 1, kernel_size=3, padding=1)
-
-        # self.ra2_conv1 = BasicConv2d(320, 64, kernel_size=1)
-        # self.ra2_conv2 = BasicConv2d(64, 64, kernel_size=3, padding=1)
-        # self.ra2_conv3 = BasicConv2d(64, 64, kernel_size=3, padding=1)
-        # self.ra2_conv4 = BasicConv2d(64, 1, kernel_size=3, padding=1)
-
-        # self.conv2 = BasicConv2d(320, 32, kernel_size=1)
-        # self.conv3 = BasicConv2d(640, 32, kernel_size=1)
-        # self.conv4 = BasicConv2d(1024, 32, kernel_size=1)
-        # self.conv5 = BasicConv2d(1024, 1024, 3, padding=1)
-        # self.conv6 = nn.Conv2d(1024, 1, 1)
-
-        # self.upsample = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-
         self.hardnet = hardnet(arch=68)
         self.HA = HA()
         self.rfb2_2 = RFB(320, channel)
@@ -203,6 +179,64 @@ class HarDMSEG(nn.Module):
         # self.conv6 = nn.Conv2d(1024, 1, 1)
 
         # self.upsample = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
+
+        self.hardnet = hardnet(arch=68)
+    
+    def forward(self, x):
+        # print(x.size())
+        hardnet_out = self.hardnet(x)
+        # x1 = hardnet_out[0]
+        # x2 is optimization layer, x3, x4 last layer conv
+        x2 = hardnet_out[1]
+        x3 = hardnet_out[2]
+        x4 = hardnet_out[3]
+        
+        x2_rfb = self.rfb2_1(x2) # channel -> 32
+        x3_rfb = self.rfb3_1(x3) # channel -> 32
+        x4_rfb = self.rfb4_1(x4) # channel -> 32
+        ra5_feat = self.agg1(x4_rfb, x3_rfb, x2_rfb)
+        lateral_map_5 = F.interpolate(ra5_feat, scale_factor=8, mode='bilinear') # (bs, 1, 44, 44) -> (bs, 1, 44*8=352, 352)
+        
+        return lateral_map_5
+
+class Attention(nn.Module):
+    def __init__(self, F_g, F_l, F_int):
+        super(Attention, self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+        self.relu = nn.ReLU(inplace=True)
+    
+    def forward(self, g, x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1 + x1)
+        psi = self.psi(psi)
+
+        return x * psi
+
+class HarDPD(nn.Module):
+    def __init__(self, channel=32):
+        super(HarDPD, self).__init__()
+        self.relu = nn.ReLU(inplace=True)
+        # RFB module
+        self.rfb2_1 = RFB(320, channel)
+        self.rfb3_1 = RFB(640, channel)
+        self.rfb4_1 = RFB(1024, channel)
+        
+        self.agg1 = Aggregation(32)
 
         self.hardnet = hardnet(arch=68)
     

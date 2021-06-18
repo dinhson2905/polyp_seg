@@ -1,1 +1,1 @@
-from .hardmseg import HarDMSEG, HarDCPD
+from .hardmseg import HarDMSEG, HarDCPD, HarDPD

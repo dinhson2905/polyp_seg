@@ -79,7 +79,7 @@ EfficientNet
     + Vì search-space nhỏ hơn -> random search trên các mạng lớn (B4)
     + A · S^w · P^v  -- w=-0.07, v=-0.05 -- A: acc, S: normalized training step time (forward + backward), P: parameter size 
 - EfficientNetV2 Architecture:
-    + sử dụng kết hợp MBConv và Fuse-MBConv trong các early layer
+    + sử dụng kết hợp MBConv và Fused-MBConv trong các early layer
     + tỉ lệ expansion cho MBConv nhỏ hơn -> ít chi phí hơn
     + kernel_size 3x3 và nhỏ hơn -> phải thêm nhiều layers để bù lại receptive field bị giảm.
     + Loại last stride-1 stage trong origin EfficientNet

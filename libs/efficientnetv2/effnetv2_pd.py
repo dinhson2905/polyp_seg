@@ -2,6 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .effnetv2 import effnetv2_s
+from .holistic_attention import HA
+
+if hasattr(nn, 'SiLU'):
+    SiLU = nn.SiLU
+else:
+    # For compatibility with old PyTorch versions
+    class SiLU(nn.Module):
+        def forward(self, x):
+            return x * torch.sigmoid(x)
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1):
@@ -69,7 +78,6 @@ class Aggregation(nn.Module):
         self.conv5 = nn.Conv2d(3*channel, 1, 1)
 
     def forward(self, x1, x2, x3):
-        print(x1.shape, x2.shape, x3.shape)
         x1_1 = x1
         x2_1 = self.conv_upsample1(self.upsample(x1)) * x2
         x3_1 = self.conv_upsample2(self.upsample(self.upsample(x1))) * self.conv_upsample3(self.upsample(x2)) * x3
@@ -85,23 +93,55 @@ class Aggregation(nn.Module):
 
         return x
 
+
+
+def conv_1x1_bn(inp, oup):
+    return nn.Sequential(
+        nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
+        nn.BatchNorm2d(oup),
+        SiLU()
+    )
+
+class ConvLayer(nn.Sequential):
+    def __init__(self, in_channels, out_channels, kernel=3, stride=1, dropout=0.1, bias=False):
+        super().__init__()
+        out_ch = out_channels
+        groups = 1
+
+        self.add_module('conv', nn.Conv2d(in_channels, out_ch, kernel_size=kernel, stride=stride, padding=kernel//2, groups=groups, bias=bias))
+        self.add_module('norm', nn.BatchNorm2d(out_ch))
+        self.add_module('relu', nn.ReLU6(True))
+    
+    def forward(self, x):
+        return super().forward(x)
+
+
 class EffNetV2SPD(nn.Module):
     def __init__(self, channel=32):
         super(EffNetV2SPD, self).__init__()
-        self.relu = nn.ReLU(inplace=True)
+        self.effnetv2_s = effnetv2_s()
+
         self.rfb2_1 = RFB(256, channel)
         self.rfb3_1 = RFB(512, channel)
         self.rfb4_1 = RFB(1024, channel)
 
         self.agg1 = Aggregation(channel)
-        self.upsample = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-        self.effnetv2_s = effnetv2_s()
+        # self.upsample = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True
+        self.conv2 = ConvLayer(64, 256)
+        self.conv3 = ConvLayer(160, 512)
+        self.conv4 = ConvLayer(272, 1024)
     
     def forward(self, x):
-        effnetv2_s_out = self.effnetv2_s(x)
-        x2 = effnetv2_s_out[0] # (64, 44, 44) (256, 44, 44) 
-        x3 = effnetv2_s_out[1] # (160, 22, 22) (512, 22, 22)
-        x4 = effnetv2_s_out[2] # (272, 11, 11) (1024, 11, 11)
+        for i in range(len(self.effnetv2_s.layers)):
+            x = self.effnetv2_s.layers[i](x)
+            if i == 10:
+                x2 = x
+                x2 = self.conv2(x2)
+            elif i == 25:
+                x3 = x
+                x3 = self.conv3(x3)
+        x4 = x
+        x4 = self.conv4(x4)
 
         x2_rfb = self.rfb2_1(x2)
         x3_rfb = self.rfb3_1(x3)
@@ -109,3 +149,55 @@ class EffNetV2SPD(nn.Module):
         ra5_feat = self.agg1(x4_rfb, x3_rfb, x2_rfb)
         lateral_map_5 = F.interpolate(ra5_feat, scale_factor=8, mode='bilinear')
         return lateral_map_5
+    
+class EffNetV2SCPD(nn.Module):
+    def __init__(self, channel=32):
+        super(EffNetV2SCPD, self).__init__()
+        self.effnetv2_s = effnetv2_s()
+
+        self.rfb2 = RFB(256, channel)
+        self.rfb3 = RFB(512, channel)
+        self.rfb4 = RFB(1024, channel)
+        self.agg = Aggregation(channel)
+        self.conv2 = conv_1x1_bn(64, 256)
+        self.conv3 = conv_1x1_bn(160, 512)
+        self.conv4 = conv_1x1_bn(272, 1024)
+        self.HA = HA()
+    
+    def forward(self, x):
+        for i in range(len(self.effnetv2_s.layers)):
+            x = self.effnetv2_s.layers[i](x)
+            if i == 10:
+                x2 = x
+                x2_1 = self.conv2(x2)
+            elif i == 25:
+                x3 = x
+                x3_1 = self.conv3(x3)
+        x4 = x
+        x4_1 = self.conv4(x4)
+        
+        x2_1_rfb = self.rfb2(x2_1) # 256 -> 32
+        x3_1_rfb = self.rfb3(x3_1) # 512 -> 32
+        x4_1_rfb = self.rfb4(x4_1) # 1024 -> 32
+        attention = self.agg(x4_1_rfb, x3_1_rfb, x2_1_rfb)
+
+        x2 = self.HA(attention.sigmoid(), x2)
+        x2_2 = self.conv2(x2)
+        for i in range(11, len(self.effnetv2_s.layers)):
+            x2 = self.effnetv2_s.layers[i](x2)
+            if i == 25:
+                x3 = x2
+                x3_2 = self.conv3(x3)
+        x4 = x2
+        x4_2 = self.conv4(x4)
+        
+        x2_2_rfb = self.rfb2(x2_2)
+        x3_2_rfb = self.rfb3(x3_2)
+        x4_2_rfb = self.rfb4(x4_2)
+
+        detection = self.agg(x4_2_rfb, x3_2_rfb, x2_2_rfb)
+
+        attention_map = F.interpolate(attention, scale_factor=8, mode='bilinear')
+        detection_map = F.interpolate(detection, scale_factor=8, mode='bilinear')
+        return attention_map, detection_map
+

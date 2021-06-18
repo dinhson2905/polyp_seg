@@ -6,6 +6,7 @@ import imageio
 from libs.hardmseg import HarDCPD, HarDMSEG
 from libs.pranet import PraNet
 from libs.respd import ResNetPD, ResNetCPD
+from libs.efficientnetv2 import EffNetV2SPD
 from utils.data_loader import ValidationDataset
 import configparser
 
@@ -30,11 +31,15 @@ elif model_name == 'hardcpd':
 elif model_name == 'resnetpd':
     model = ResNetPD()
     pth_path = config['Paths']['resnetpd_pth_path']
-    result_path = config['Paths']['resnetpd_pth_path']    
+    result_path = config['Paths']['resnetpd_result_path']    
 elif model_name == 'resnetcpd':
     model = ResNetCPD()
     pth_path = config['Paths']['resnetcpd_pth_path']
-    result_path = config['Paths']['resnetcpd_pth_path']
+    result_path = config['Paths']['resnetcpd_result_path']
+elif model_name == 'effnetv2pd':
+    model = EffNetV2SPD()
+    pth_path = config['Paths']['effnetv2pd_pth_path']
+    result_path = config['Paths']['effnetv2pd_result_path']
 
 
 model.load_state_dict(torch.load(pth_path))
@@ -55,11 +60,11 @@ for _data_name in ['CVC-300', 'CVC-ClinicDB', 'Kvasir', 'CVC-ColonDB', 'ETIS-Lar
         gt = np.asarray(gt, np.float32)
         gt /= (gt.max() + 1e-8)
         image = image.cuda()
-        if model_name == 'pranet':
+        if model_name == 'pranet' or model_name == 'prahardnet':
             _, _, _, res = model(image)
-        elif model_name == 'hardmseg' or model_name == 'resnetpd':
+        elif model_name == 'hardmseg' or model_name == 'resnetpd' or model_name == 'effnetv2pd':
             res = model(image)
-        elif model_name == 'hardcpd' or model_name == 'resnetcpd':
+        elif model_name == 'hardcpd' or model_name == 'resnetcpd' or model_name == 'effnetv2cpd':
             _, res = model(image)
         
         res = F.upsample(res, size=gt.shape, mode='bilinear', align_corners=False)

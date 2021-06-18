@@ -83,13 +83,7 @@ Tóm tắt:
 + object-aware: đo độ giống nhau giữa SM và GT
     + độ tương phản giữa FG và BG
     + phân phối đều của saliency 
-    --> OFG và OBG -> So
---> S = α ∗ So + (1 − α) ∗ Sr,
------------------
-3. wfb
-Hạn chế 
-- Nội suy:
-- Phụ thuộc (dependency) các measure không có sự phụ thuộc pixel 
+    --> OFG và OBG -> Sothiêncó sự phụ thuộc pixel 
 - tầm quan trọng ngang nhau
 
 --> wfb

@@ -1,0 +1,24 @@
+- train:
+    train_model.py
+- eval.py: đánh giá mô hình
+- cal_fps: tính toán fps, flops
+- loss_visualize.py: vẽ kết quả hàm loss của các model: hardcpd, hardpd, prahardnet, respd, rescpd, pranet, effnetv2pd
+- viz_dicescore.py: vẽ kết quả dice trên tập kvasir khi xác thực
+- result_image.py: vẽ kết quả hình ảnh của các model so với groundtruth
+- predict.py: xuất hình ảnh ghi vào folder results/
+
+-----------------------------------------------------------
+Dataset:  CVC-ClinicDB
+HarDPD -- meanDic: 0.918, meanIoU: 0.868, wFm: 0.917, Sm: 0.940, maxEm: 0.987, MAE: 0.009
+-----------------------------------------------------------
+Dataset:  CVC-ColonDB
+HarDPD -- meanDic: 0.703, meanIoU: 0.636, wFm: 0.696, Sm: 0.817, maxEm: 0.860, MAE: 0.040
+-----------------------------------------------------------
+Dataset:  ETIS-LaribPolypDB
+HarDPD -- meanDic: 0.652, meanIoU: 0.582, wFm: 0.624, Sm: 0.802, maxEm: 0.855, MAE: 0.019
+-----------------------------------------------------------
+Dataset:  Kvasir
+HarDPD -- meanDic: 0.915, meanIoU: 0.860, wFm: 0.906, Sm: 0.920, maxEm: 0.960, MAE: 0.025
+-----------------------------------------------------------
+Dataset:  CVC-300
+HarDPD -- meanDic: 0.882, meanIoU: 0.811, wFm: 0.858, Sm: 0.926, maxEm: 0.968, MAE: 0.007

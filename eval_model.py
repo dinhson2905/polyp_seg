@@ -6,6 +6,8 @@ from PIL import Image
 import numpy as np
 import configparser
 from statistics import mean
+import logging
+from logs import setup_logger
 
 class eval_dataset:
     def __init__(self, image_root, gt_root):
@@ -72,57 +74,46 @@ def Fmeasure_calu(resmap, gt, gtsize,  threshold):
 
     return dice, iou
 
-def original_wfb(resmap, gt):
-    dgt = np.asarray(gt, np.float)
-    E = np.abs(resmap - gt)
-    Dst, Idxt = distance(gt, return_indices=True)
-    Et = E
-    Et[~GT] = Et[Idxt[~GT]]
-    EA = imfilter(Et, 'blur')
-    MIN_E_EA = E
-    MIN_E_EA[GT & EA<E] = EA[GT & EA<E]
-    B = np.ones(GT.shape)
-    B[~GT] = 2.0 - 1*math.exp(math.log(1-0.5)/5. * Dst[~GT])
-    Ew = np.multiply(MIN_E_EA, B)
-
-    TPw = np.sum(dGT[:] - np.sum(np.sum(Ew[GT])))
-    FPw = np.sum(np.sum(Ew[~GT]))
-    R = np.mean(Ew[GT])
-    P = TPw
-    pass
-
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('config.ini')
     test_path = config['Paths']['test_path']
-    # specify model_result_path
-    eval_result_path = config['Paths']['eval_result_path']
-    datasets = ['CVC-ClinicDB', 'CVC-ColonDB', 'ETIS-LaribPolypDB', 'Kvasir', 'CVC-300']
-    print('Model: ', eval_result_path)
-    for data_name in datasets:
-        image_root = f'{eval_result_path}/{data_name}/'
-        gt_root = f'{test_path}/{data_name}/masks/'
-        eval_loader = eval_dataset(image_root, gt_root)
-        # thresholds 1:0:-1/255
-        thresholds = np.linspace(1, 0, 256)
-        threshold_dice, threshold_IoU = np.zeros((eval_loader.size, len(thresholds))), np.zeros((eval_loader.size, len(thresholds)))
-        for i in range(eval_loader.size):
-            image, gt, name = eval_loader.load_data()
-            gt = np.asarray(gt, np.float32)
-            gt = (gt > 128)
-            dgt = np.asarray(gt, np.float) # double_gt    
-            resmap = image[0,1,:,:]
-            resmap = np.array(resmap)
-            threshold_dic, threshold_iou = np.zeros(len(thresholds)), np.zeros(len(thresholds))
-            for j in range(0, len(thresholds)):
-                threshold_dic[j], threshold_iou[j] = Fmeasure_calu(resmap, dgt, gt.shape, thresholds[j])
+    result_path = 'results/'
+    # models = ['HarDPD', 'HarDCPD', 'PraHarDNet', 'ResNetPD', 'ResNetCPD', 'PraNet', 'UNet', 'UNet++']
+    models = ['UNet']
+    datasets = ['CVC-ClinicDB', 'ETIS-LaribPolypDB', 'CVC-300', 'Kvasir', 'CVC-ColonDB']
+    # datasets = ['CVC-ClinicDB']
+    for model in models:
+        log_file = 'logs/eval_' + model + '.log'
+        eval_logger = setup_logger('eval_logger', log_file)
+        print('Model: ', model)
+        eval_logger.info(model)
+        eval_result_path = result_path + model
+        for data_name in datasets:
+            eval_logger.info(data_name)
+            img_root = f'{eval_result_path}/{data_name}/'
+            gt_root = f'{test_path}/{data_name}/masks/'
+            eval_loader = eval_dataset(img_root, gt_root)
+            thresholds = [0.5]            
+            threshold_dice, threshold_IoU = np.zeros((eval_loader.size, len(thresholds))), np.zeros((eval_loader.size, len(thresholds)))
             
-            threshold_dice[i,:] = threshold_dic
-            threshold_IoU[i,:] = threshold_iou
-        # Dice
-        column_dice = np.mean(threshold_dice, 0)
-        meandice = np.mean(column_dice)
-        # IoU
-        column_iou = np.mean(threshold_IoU, 0)
-        meaniou = np.mean(column_iou)
-        print(meandice, meaniou)    
+            for i in range(eval_loader.size):
+                image, gt, name = eval_loader.load_data()
+                gt = np.asarray(gt, np.float32)
+                gt = (gt > 128)
+                dgt = np.asarray(gt, np.float) # double_gt    
+                resmap = image[0,1,:,:]
+                resmap = np.array(resmap)
+                threshold_dic, threshold_iou = np.zeros(len(thresholds)), np.zeros(len(thresholds))
+                for j in range(0, len(thresholds)):
+                    threshold_dic[j], threshold_iou[j] = Fmeasure_calu(resmap, dgt, gt.shape, thresholds[j])
+                    eval_logger.info(f'{name} -  {threshold_dic[j]}')
+                threshold_dice[i,:] = threshold_dic
+                threshold_IoU[i,:] = threshold_iou
+            # Dice
+            column_dice = np.mean(threshold_dice, 0)        
+            meandice = np.mean(column_dice)
+            # IoU
+            column_iou = np.mean(threshold_IoU, 0)    
+            meaniou = np.mean(column_iou)
+            print(meandice, meaniou)    
